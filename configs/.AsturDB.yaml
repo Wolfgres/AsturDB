@@ -1,0 +1,36 @@
+deamon:
+  pid_file: ./tanke.pid
+log:
+  log_level: debug
+  log_file: log/tanke.log
+  log_format: text # json -> to output in json format
+database:
+  host: 192.168.0.6
+  port: 5432
+  admin_user: admin
+  test_user: wolfgres_user
+  password: tantor.CorvusD
+  database: postgres
+random_data:
+  regions: 5
+  warehouses: 10
+  districts: 5
+  products: 10000
+  employees: 1000
+  customers: 500 # 1 a 10 contactos por cliente
+test:
+  stress_type: load # or stress -> the stress test make updates deletes and selects
+  orders_by_test: 10000
+  target_size: 1000 
+  orders_by_loop: 20 #Must be minor to 50
+  min_workers: 5
+  max_workers: 10
+  time_sleep: 1 # seconds
+target:
+  size: 0 #The target stress test in MB size, 0 is desactivated
+  concurrent_users:
+    min: 10
+    max: 20
+  concurrent_time:
+    min: 60
+    max: 120

@@ -1,0 +1,30 @@
+queries:
+  - name: products_report
+    limit: 50
+    query:
+      > 
+      SELECT pr.product_id,pr.product_name,count(orit.product_id) AS total FROM product AS pr INNER JOIN order_items AS orit ON pr.product_id=orit.product_id
+      GROUP BY orit.product_id,pr.product_name,pr.product_id ORDER BY total DESC LIMIT 50
+  - name: employee_with_more _orders
+    limit: 20
+    query: 
+      > 
+      SELECT emp.employee_id,emp.first_name,emp.last_name,COUNT(emp.employee_id) AS TOTAL FROM
+        employee AS emp INNER JOIN orders AS ord ON emp.employee_id=ord.salesman_id WHERE EXTRACT(YEAR FROM
+        ord.order_date)='2019' GROUP BY (emp.employee_id) ORDER BY total DESC
+  - name: order_status_10months_ago
+    limit: 0
+    query: 
+      > 
+      SELECT ord.order_id,ord.order_date,ors.status_name FROM orders AS ord INNER JOIN
+      order_status AS ors ON ord.status_id=ors.status_id WHERE ord.order_date::timestamp BETWEEN (NOW() -
+      interval '10 month')::timestamp AND NOW()::timestamp ORDER BY ord.order_date DESC
+  - name: customers_max_orders
+    limit: 15
+    query:
+      > 
+      SELECT ord.customer_id,cus.name,COUNT(ord.customer_id) AS total 
+      FROM orders AS ord INNER JOIN customer AS cus ON ord.customer_id=cus.customer_id GROUP BY ord.customer_id,cus.name ORDER BY total DESC
+
+  
+
