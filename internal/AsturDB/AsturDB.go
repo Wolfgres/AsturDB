@@ -122,6 +122,26 @@ func query(n int) {
 
 }
 
+// Check Size Test
+
+func checkSizeTest() bool {
+	log.Debug("Check Size :: ")
+	var size int
+	conn, ctx := wolfgres.PgxConn()
+	sql := fmt.Sprintf("SELECT pg_database_size('%s')\n", datname)
+
+	row := conn.QueryRow(ctx, sql)
+	err := row.Scan(&size)
+
+	if err != nil {
+		log.Error(err)
+	}
+
+	log.Debug("Size DB Test ::", size)
+	conn.Close(ctx)
+	return true
+}
+
 /*
 	Create Test Database set in configfile and Create Test User
 */

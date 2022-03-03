@@ -1,8 +1,8 @@
 deamon:
-  pid_file: ./tanke.pid
+  pid_file: ./AsturDB.pid
 log:
   log_level: debug
-  log_file: log/tanke.log
+  log_file: log/AsturDB.log
   log_format: text # json -> to output in json format
 database:
   host: 192.168.0.6
@@ -20,8 +20,9 @@ random_data:
   customers: 500 # 1 a 10 contactos por cliente
 test:
   stress_type: load # or stress -> the stress test make updates deletes and selects
-  orders_by_test: 10000
-  target_size: 1000 
+  target_type: size # or orders 
+  target_orders: 10000
+  target_size: 10240 # Target size in MB
   orders_by_loop: 20 #Must be minor to 50
   min_workers: 5
   max_workers: 10
