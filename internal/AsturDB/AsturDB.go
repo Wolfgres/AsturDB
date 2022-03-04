@@ -50,9 +50,7 @@ func RunStressTest(dbTest string) {
 
 	min_workers := viper.GetInt("test.min_workers")
 	max_workers := viper.GetInt("test.max_workers")
-
 	time_sleep := viper.GetInt("test.time_sleep")
-
 	stress_type := viper.GetString("test.stress_type")
 
 	var type_worker int
@@ -85,10 +83,43 @@ func RunStressTest(dbTest string) {
 				go query(orderXciclos)
 			}
 		}
+
+		if !nextLoopTest() {
+			log.Info("Stop test")
+			break
+		}
+
 		log.Debug("Sleep:: ", time_sleep)
 		time.Sleep(time.Duration(time_sleep) * time.Second)
 	}
 
+}
+
+// Check a target type and call function to validate this.
+func nextLoopTest() bool {
+
+	var r bool
+
+	if viper.GetString("test.target_type") == "size" {
+		if targetSizeReached() {
+			log.Info("The target size reached! ")
+			log.Info("Stop test")
+			r = false
+		} else {
+			r = true
+		}
+	}
+
+	if viper.GetString("test.target_type") == "orders" {
+		if targetOrdersReached() {
+			log.Info("The target orders reached! ")
+			r = false
+		} else {
+			r = true
+		}
+	}
+
+	return r
 }
 
 func insertOrder(orderXciclos int, randmonData RandmonData) {
@@ -122,14 +153,15 @@ func query(n int) {
 
 }
 
-// Check Size Test
-
-func checkSizeTest() bool {
-	log.Debug("Check Size :: ")
+// This function check if the target size reached
+func targetSizeReached() bool {
+	datname := "wolfgres_db" //tem
+	target_size := viper.GetInt("test.target_size")
+	log.Debug("Check Database Size :: ", datname)
 	var size int
 	conn, ctx := wolfgres.PgxConn()
-	sql := fmt.Sprintf("SELECT pg_database_size('%s')\n", datname)
-
+	sql := fmt.Sprintf("SELECT pg_database_size('%s') / 1024 / 1024;", datname)
+	log.Debug(sql)
 	row := conn.QueryRow(ctx, sql)
 	err := row.Scan(&size)
 
@@ -137,9 +169,41 @@ func checkSizeTest() bool {
 		log.Error(err)
 	}
 
-	log.Debug("Size DB Test ::", size)
 	conn.Close(ctx)
-	return true
+
+	log.Debug("Size DB Test :: ", size)
+	log.Debug("Target Size :: ", target_size)
+
+	if size <= target_size {
+		return false
+	} else {
+		return true
+	}
+}
+
+func targetOrdersReached() bool {
+	targetOrders := viper.GetInt("test.target_orders")
+	var noOrders int
+	conn, ctx := wolfgres.PgxConn()
+	sql := "SELECT count(order_id) FROM wfg.orders;"
+	log.Debug(sql)
+	row := conn.QueryRow(ctx, sql)
+	err := row.Scan(&noOrders)
+
+	if err != nil {
+		log.Error(err)
+	}
+
+	conn.Close(ctx)
+
+	log.Debug("Orders Test :: ", noOrders)
+	log.Debug("Target Orders :: ", targetOrders)
+
+	if noOrders <= targetOrders {
+		return false
+	} else {
+		return true
+	}
 }
 
 /*
