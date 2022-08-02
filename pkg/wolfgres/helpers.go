@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -30,7 +29,7 @@ const (
 
 // Generate Conn in PostgreSQL with pgx driver from a parameters in config file
 func PgxConn() (*pgx.Conn, context.Context) {
-	var connStr string = fmt.Sprintf("postgresql://%s:%s@%s:%v/%s", viper.Get("database.admin_user"), viper.Get("database.password"),
+	var connStr string = fmt.Sprintf("postgresql://%s:%s@%s:%v/%s", viper.Get("database.admin_user"), viper.Get("database.admin_pass"),
 		viper.Get("database.host"), viper.GetInt("database.port"), viper.Get("database.database"))
 	//log.Debug(connStr)
 	ctx := context.Background()
@@ -44,20 +43,32 @@ func PgxConn() (*pgx.Conn, context.Context) {
 	return conn, ctx
 }
 
-// Generate Conn in PostgreSQL with pgx driver to another user
-func PgxConnDB(database string, user string) (*pgx.Conn, context.Context) {
+// Generate Conn in PostgreSQL with pgx driver with the test user from config file
+func PgxConnDB(database string) (*pgx.Conn, context.Context) {
 	//var connStr string = fmt.Sprintf("postgresql://%s:%s@%s:%v/%s", user, viper.Get("database.password"),
 	//	viper.Get("database.host"), viper.GetInt("database.port"), database)
-	password := user
+	user := viper.Get("database.test_pass")
+	password := viper.Get("database.test_pass")
 	var connStr string = fmt.Sprintf("postgresql://%s:%s@%s:%v/%s", user, password,
 		viper.Get("database.host"), viper.GetInt("database.port"), database)
-	//log.Debug(connStr)
 	ctx := context.Background()
 	conn, err := pgx.Connect(ctx, connStr)
 
 	if err != nil {
+
 		log.Fatal(os.Stderr, " Unable to connecto database: ", err)
 		os.Exit(1)
+		/*
+			var pgErr *pgconn.PgError
+
+			if errors.As(err, &pgErr) {
+				if pgErr.Code == "53300" {
+					log.Error(pgErr.Message)
+					log.Info("The max connections reached in PostgreSQL server, the thread sleep 5 seconds.")
+					time.Sleep(5 * time.Second)
+				}
+			}
+		*/
 	}
 
 	return conn, ctx
@@ -115,6 +126,7 @@ func GormSqliteConn(database string) *gorm.DB {
 
 // ReadConfig read a config file to functionality for AsturDB
 // Checar *****************************
+/*
 func GetConfig() (Config, error) {
 	filename := ""
 	log.Debug(filename)
@@ -144,35 +156,52 @@ func GetConfig() (Config, error) {
 	}
 
 	return c, nil
-}
+}*/
 
-/*
-// Get Queries
-func GetQueries(filename string) (Queries, error) {
+// Get Queries from a YAML file
+/// TODO: Check and configurate new functionality with viper fixed
+func GetQueries(filename string) (*Queries, error) {
 	var queries Queries
 
 	if len(filename) == 0 {
-		filename = "scripts" + pathSeparator + "queries.yaml"
+		filename = "scripts" + PathSeparator + "queries.yaml"
 	}
 
 	exePath := GetExecPath()
-	f := exePath + pathSeparator + filename
+	f := exePath + PathSeparator + filename
 	yamlFile, err := ioutil.ReadFile(f)
 
 	if err != nil {
 		log.Error("YamlFile read: ", err)
-		return queries, errors.New("The file " + filename + " don't exist")
+		return &queries, errors.New("The file " + filename + " don't exist")
 	}
 
 	err = yaml.Unmarshal(yamlFile, &queries)
 	if err != nil {
 		log.Error("Unmarshall -> ", err)
-		return queries, errors.New("The file failed in Unmarshal")
+		return &queries, errors.New("The file failed in Unmarshal")
 	}
 
-	return queries, nil
+	return &queries, nil
 }
-*/
+
+// Return Query by name, this query inside in queries.yaml
+func GetQuery(queryName string) (*WfgQueries, error) {
+	queries, err := GetQueries("")
+
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	for _, q := range queries.Queries {
+		if q.Name == queryName {
+			return &q, nil
+		}
+	}
+
+	return nil, errors.New("Query doesn't exist in yaml file")
+}
 
 // Create Query Insert based in struct
 func CreateQueryInsert(schema string, q interface{}) string {
@@ -342,29 +371,4 @@ func SetupCloseHandler() {
 		log.Info("\r- Ctrl+C pressed in Terminal \n")
 		os.Exit(0)
 	}()
-}
-
-// Save a PID number in a file
-func SavePID(pid int) {
-	config, err := GetConfig()
-
-	if err != nil {
-		log.Error(err)
-	}
-
-	file, err := os.Create(config.Deamon.PidFile)
-
-	if err != nil {
-		log.Error(err)
-	}
-	defer file.Close()
-
-	_, err = file.WriteString(strconv.Itoa(pid))
-
-	if err != nil {
-		log.Error(err)
-	}
-
-	file.Sync() // flush to disk
-
 }

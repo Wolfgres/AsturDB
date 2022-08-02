@@ -17,13 +17,12 @@ import (
 )
 
 var datname string
-var test_user string
 
 // Run Stress Test with name
 // NameStressTest
 func RunStressTest(dbTest string) {
 	datname = dbTest
-	test_user = viper.GetString("database.test_user")
+	//test_user = viper.GetString("database.test_user")
 
 	randomData := RandmonData{
 		customers:            viper.GetInt("random_data.customers"),
@@ -40,33 +39,45 @@ func RunStressTest(dbTest string) {
 
 	log.Info("Init Orders")
 	orders := viper.GetInt("test.orders_by_test")
-	var orderXciclos int
+	var order4Cycles, updates4Clycles, deletes4Clycles int
+
+	// Ay que verificar como hacer esta validacion
 
 	if viper.GetInt("test.orders_by_loop") > 50 {
-		orderXciclos = 50
+		order4Cycles = 50
 	} else {
-		orderXciclos = viper.GetInt("test.orders_by_loop")
+		order4Cycles = viper.GetInt("test.orders_by_loop")
+		updates4Clycles = viper.GetInt("test.updates_by_loop")
+		deletes4Clycles = viper.GetInt("test.deletes_by_loop")
 	}
 
 	min_workers := viper.GetInt("test.min_workers")
 	max_workers := viper.GetInt("test.max_workers")
 	time_sleep := viper.GetInt("test.time_sleep")
-	stress_type := viper.GetString("test.stress_type")
+	test_type := viper.GetString("test.type")
+	max_conn_sleep := viper.GetInt("test.max_conn_sleep")
 
 	var type_worker int
 
 	for {
+
+	Resume:
+		log.Debug("Validate if the max_connections is not reached")
+		if maxConnectionsReached() {
+			time.Sleep(time.Duration(max_conn_sleep) * time.Second)
+			goto Resume
+		}
 
 		workers := min_workers + rand.Intn(max_workers-min_workers)
 
 		log.Debug("#########################")
 		log.Debug("Workers:: -> ", workers)
 		log.Debug("#########################")
-		orders = orders - orderXciclos
+		orders = orders - order4Cycles
 
 		for i := 0; i < workers; i++ {
 
-			if stress_type != "load" {
+			if test_type != "load" {
 				type_worker = 1 + rand.Intn(5-1)
 			} else {
 				type_worker = 1
@@ -74,13 +85,13 @@ func RunStressTest(dbTest string) {
 
 			switch type_worker {
 			case 1:
-				go insertOrder(orderXciclos, randomData)
+				go insertOrder(order4Cycles, randomData)
 			case 2:
-				go updateQuery(orderXciclos)
+				go updateQuery(updates4Clycles)
 			case 3:
-				go deleteQuery(orderXciclos)
+				go deleteQuery(deletes4Clycles)
 			case 4:
-				go query(orderXciclos)
+				go query(order4Cycles)
 			}
 		}
 
@@ -122,11 +133,12 @@ func nextLoopTest() bool {
 	return r
 }
 
-func insertOrder(orderXciclos int, randmonData RandmonData) {
-	log.Debug("Generate ", orderXciclos, " Inserts ")
+// Generate Orders Inserts and insert in single transaction
+func insertOrder(orders4Cycle int, randmonData RandmonData) {
+	log.Debug("Generate ", orders4Cycle, " Inserts ")
 	var sql string
-	sql = GenerateOrders(orderXciclos, randmonData.customers, randmonData.employees, randmonData.products, randmonData.districts_warehouses)
-	conn, ctx := wolfgres.PgxConnDB(datname, test_user)
+	sql = GenerateOrders(orders4Cycle, randmonData.customers, randmonData.employees, randmonData.products, randmonData.districts_warehouses)
+	conn, ctx := wolfgres.PgxConnDB(datname)
 	tx, err := conn.Begin(ctx)
 	_, err = tx.Exec(ctx, sql)
 	if err != nil {
@@ -138,19 +150,48 @@ func insertOrder(orderXciclos int, randmonData RandmonData) {
 }
 
 func updateQuery(n int) {
-	log.Debug("Generate Updates ")
-	// TODO: Generate Updates Worker
+	log.Debug("Generate ", n, " Updates ")
+	var sql string
+	sql = GenerateUpdateOrder(n, datname)
+	conn, ctx := wolfgres.PgxConnDB(datname)
+	tx, err := conn.Begin(ctx)
+	_, err = tx.Exec(ctx, sql)
+	if err != nil {
+		log.Error(err)
+		tx.Rollback(ctx)
+	}
+	tx.Commit(ctx)
+	conn.Close(ctx)
 }
 
 func deleteQuery(n int) {
-	log.Debug("Generate Deletes ")
+	log.Debug("Generate ", n, " Deletes")
 	// TODO: Generate Deletes Worker
+	var sql string
+	sql = GenerateDeleteOrder(n, datname)
+	conn, ctx := wolfgres.PgxConnDB(datname)
+	tx, err := conn.Begin(ctx)
+	_, err = tx.Exec(ctx, sql)
+	if err != nil {
+		log.Error(err)
+		tx.Rollback(ctx)
+	}
+	tx.Commit(ctx)
+	conn.Close(ctx)
 }
 
 func query(n int) {
 	log.Debug("Generate Query ")
 	// TODO: Generate Query Worker
-
+	var sql string
+	sql = GenerateSelectsQueries(n, datname)
+	conn, ctx := wolfgres.PgxConnDB(datname)
+	tx, err := conn.Begin(ctx)
+	_, err = tx.Exec(ctx, sql)
+	if err != nil {
+		log.Error(err)
+	}
+	conn.Close(ctx)
 }
 
 // This function check if the target size reached
@@ -206,6 +247,26 @@ func targetOrdersReached() bool {
 	}
 }
 
+// When
+func maxConnectionsReached() bool {
+	max_conn_percent := viper.GetInt("test.max_conn_percent")
+	var availableConnPercent int
+	conn, ctx := wolfgres.PgxConn()
+	sql := "SELECT  100 - ((t.conn_active * 100)::integer/m.max_connection::integer)  FROM (SELECT 1 AS id, setting AS max_connection FROM pg_settings WHERE name = 'max_connections') m JOIN (SELECT 1 AS id, COALESCE(COUNT(pid),0) AS conn_active FROM pg_stat_activity WHERE state = 'active' AND pid <> pg_backend_pid()) t ON t.id = m.id"
+	row := conn.QueryRow(ctx, sql)
+	err := row.Scan(&availableConnPercent)
+
+	if err != nil {
+		log.Error(err)
+	}
+
+	conn.Close(ctx)
+	log.Debug(" max_conn_percent:: ", max_conn_percent, " > availableConnPercent:: ", availableConnPercent)
+	log.Debug("result:: ", max_conn_percent > availableConnPercent)
+
+	return max_conn_percent > availableConnPercent
+}
+
 /*
 	Create Test Database set in configfile and Create Test User
 */
@@ -240,7 +301,7 @@ func createDBUser() (bool, error) {
 }
 
 func loadCatalogs(randmonData RandmonData) (bool, error) {
-	conn, ctx := wolfgres.PgxConnDB(datname, test_user)
+	conn, ctx := wolfgres.PgxConnDB(datname)
 	if loadScript(conn, ctx, "schema") {
 		log.Info("Database Schema Created")
 	}
@@ -424,13 +485,8 @@ func LoadEmployees(max int) {
 
 // Save a PID number in a file
 func SavePID(pid int) {
-	config, err := wolfgres.GetConfig()
 
-	if err != nil {
-		log.Error(err)
-	}
-
-	file, err := os.Create(config.Deamon.PidFile)
+	file, err := os.Create(viper.GetString("deamon.pid_file"))
 
 	if err != nil {
 		log.Error(err)

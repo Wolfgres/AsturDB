@@ -1,9 +1,7 @@
 # AsturDB
 ## The stress tool to PostgreSQL
 
-
-
-AsturDB by Wolfgres Postgres Enterprise is a benchmark tool to stress databases in PostgreSQL.
+AsturDB by Wolfgres Postgres Enterprise is a benchmark tool to stress databases in PostgreSQL to test.
 
 - You can stress with warehouse
 - You can stress to size objective

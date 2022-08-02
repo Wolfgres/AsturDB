@@ -1,6 +1,9 @@
 #Ignore database dingo
 ./data/*
 
+# ignore VSCode
+*.vscode
+
 # Binaries for programs and plugins
 *.exe
 *.exe~

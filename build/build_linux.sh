@@ -13,6 +13,7 @@ echo "Copy app directories";
 
 cp -r configs bin/$LINUX/;
 cp -r scripts bin/$LINUX/;
+cp -r queries bin/$LINUX/;
 mkdir bin/$LINUX/data;
 cp build/linux_install.sh bin/$LINUX/;
 mkdir bin/$LINUX/log;

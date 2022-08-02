@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/icrowley/fake"
-	"github.com/spf13/viper"
 
 	"github.com/jackc/pgx/v4"
 	log "github.com/sirupsen/logrus"
@@ -55,6 +55,87 @@ func GenerateOrders(x int, customers int, emps int, products int, district int) 
 
 	return sql
 
+}
+
+// Generate script with UPDATE senteces in order table
+func GenerateUpdateOrder(x int, datname string) string {
+	var err error
+	query, err := wolfgres.GetQuery("get_randmon_order_ids")
+	var updateScript string
+	if err != nil {
+		log.Error(err)
+	}
+
+	conn, ctx := wolfgres.PgxConnDB(datname)
+	sqlQuery := fmt.Sprintf("%s LIMIT %s", query.Query, strconv.Itoa(x))
+	rows, err := conn.Query(ctx, sqlQuery)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	updateScript = ""
+
+	for rows.Next() {
+		var order_id string
+
+		err = rows.Scan(&order_id)
+
+		if err != nil {
+			log.Error("err")
+			rows.Close()
+		}
+
+		statusId := strconv.Itoa(RandInt(1, 5))
+
+		updateScript += fmt.Sprintf("UPDATE wfg.orders SET status_id = %s WHERE order_id = '%s';\n", statusId, order_id)
+	}
+
+	return updateScript
+}
+
+// Generate script with UPDATE senteces in order table
+func GenerateDeleteOrder(x int, datname string) string {
+	var err error
+	query, err := wolfgres.GetQuery("get_randmon_order_ids")
+	var updateScript string
+	if err != nil {
+		log.Error(err)
+	}
+
+	conn, ctx := wolfgres.PgxConnDB(datname)
+	sqlQuery := fmt.Sprintf("%s LIMIT %s", query.Query, strconv.Itoa(x))
+	rows, err := conn.Query(ctx, sqlQuery)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	updateScript = ""
+
+	for rows.Next() {
+		var order_id string
+
+		err = rows.Scan(&order_id)
+
+		if err != nil {
+			log.Error("err")
+			rows.Close()
+		}
+
+		updateScript += fmt.Sprintf("DELETE FROM wfg.order_items WHERE order_id = '%s';\n", order_id)
+		updateScript += fmt.Sprintf("DELETE FROM wfg.orders WHERE order_id = '%s';\n", order_id)
+	}
+
+	return updateScript
+}
+
+//Generate queries
+func GenerateSelectsQueries(x int, datname string) string {
+	log.Debug(" x -> ", x)
+	return ""
 }
 
 func GenerateRegion(regionNumber int) string {
@@ -263,8 +344,7 @@ func GenerateInventory(district_id int, products int) string {
 
 //TODO: Checar esta parte
 func getCityIdsOnRegion(datname string) []int {
-	test_user := viper.GetString("database.test_user")
-	conn, ctx := wolfgres.PgxConnDB(datname, test_user)
+	conn, ctx := wolfgres.PgxConnDB(datname)
 	defer conn.Close(ctx)
 
 	sql := `SELECT city_id FROM city c

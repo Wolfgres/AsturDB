@@ -126,7 +126,7 @@ CREATE TABLE wfg.history_district (
     district_id integer NOT NULL,
     product_id integer NOT NULL,
     change_inventory timestamp without time zone NOT NULL,
-    "sumed _quantity" integer NOT NULL
+    sumed_quantity integer NOT NULL
 );
 
 

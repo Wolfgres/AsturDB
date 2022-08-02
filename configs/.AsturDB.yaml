@@ -4,12 +4,15 @@ log:
   log_level: debug
   log_file: log/AsturDB.log
   log_format: text # json -> to output in json format
+config_files:
+  queries_files: ./configs/queries.yaml
 database:
   host: 192.168.0.6
   port: 5432
   admin_user: admin
+  admin_pass: tantor.CorvusD
   test_user: wolfgres_user
-  password: tantor.CorvusD
+  test_pass: wolfgres_user
   database: postgres
 random_data:
   regions: 5
@@ -17,16 +20,20 @@ random_data:
   districts: 5
   products: 10000
   employees: 1000
-  customers: 500 # 1 a 10 contactos por cliente
+  customers: 500 # 1 a 10 contacts per customer
 test:
-  stress_type: load # or stress -> the stress test make updates deletes and selects
+  type: stress      # load -> only inserts or stress -> the stress test make inserts updates deletes and selects
   target_type: size # or orders 
   target_orders: 10000
   target_size: 10240 # Target size in MB
-  orders_by_loop: 20 #Must be minor to 50
+  orders_by_loop: 30 # Must be minor to 50
+  updates_by_loop: 10 
+  deletes_by_loop: 10
   min_workers: 5
-  max_workers: 10
-  time_sleep: 1 # seconds
+  max_workers: 20
+  time_sleep: 3 # seconds
+  max_conn_percent: 20 # percent of connections available to keep
+  max_conn_sleep: 30 # seconds
 target:
   size: 0 #The target stress test in MB size, 0 is desactivated
   concurrent_users:

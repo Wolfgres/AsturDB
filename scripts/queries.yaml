@@ -1,11 +1,16 @@
 queries:
+  - name: get_randmon_order_ids
+    limit: 0
+    query:
+      >
+      SELECT order_id FROM orders ORDER BY RANDOM()
   - name: products_report
     limit: 50
     query:
       > 
       SELECT pr.product_id,pr.product_name,count(orit.product_id) AS total FROM product AS pr INNER JOIN order_items AS orit ON pr.product_id=orit.product_id
-      GROUP BY orit.product_id,pr.product_name,pr.product_id ORDER BY total DESC LIMIT 50
-  - name: employee_with_more _orders
+      GROUP BY orit.product_id,pr.product_name,pr.product_id ORDER BY total DESC 
+  - name: employee_with_more_orders
     limit: 20
     query: 
       > 
