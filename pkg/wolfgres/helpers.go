@@ -47,7 +47,7 @@ func PgxConn() (*pgx.Conn, context.Context) {
 func PgxConnDB(database string) (*pgx.Conn, context.Context) {
 	//var connStr string = fmt.Sprintf("postgresql://%s:%s@%s:%v/%s", user, viper.Get("database.password"),
 	//	viper.Get("database.host"), viper.GetInt("database.port"), database)
-	user := viper.Get("database.test_pass")
+	user := viper.Get("database.test_user")
 	password := viper.Get("database.test_pass")
 	var connStr string = fmt.Sprintf("postgresql://%s:%s@%s:%v/%s", user, password,
 		viper.Get("database.host"), viper.GetInt("database.port"), database)
