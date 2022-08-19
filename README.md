@@ -5,14 +5,14 @@ __AsturDB by Wolfgres Postgres Enterprise__ es la herramienta para el análisis,
 
 ## Contenido
 
-* [Información General](#Información General)
-* [Caractirísticas Principales](#Caracteristicas)
-* [Obtener AsturDB](#Obtener AsturDB)
-* [Prerrequisitos](#Prerrequisitos)
-* [Instalación y Configuración](#Instalación y Configuración)
-* [Ejecución](#Ejecución)
-* [Menú de Ayuda](#Instalacion)
-* [Contacto](#Instalacion)
+* [Información General](#información-general)
+* [Caractirísticas Principales](#características-principales)
+* [Obtener AsturDB](#obtener-asturdb)
+* [Prerrequisitos](#prerrequisitos)
+* [Instalación y Configuración](#instalación-y-configuración)
+* [Ejecución](#ejecución)
+* [Menú de Ayuda](#menú-de-ayuda)
+* [Contacto](#contacto)
 
 ## Información General
 AsturDB esta diseñada con el objetivo de brindar una herramienta que permita simular diversos escenarios que influyen en el rendimiento de una base de datos PostgreSQL así como obtener metricas realcionadas con la ejecución y procesamiento masivo de diversas sentencias SQL (SELECT, INSERT, UPDATE, DELETE).   
