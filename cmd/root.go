@@ -38,9 +38,9 @@ var cfgFile string
 var rootCmd = &cobra.Command{
 	Use:   "asturdb",
 	Short: "AsturDB is a WolfgresTool to create a stress test to wolfgres_db",
-	Long: `*********************
+	Long: `*************************************************************************
     AsturDB by Wolfgres - Postgres Enterprise
-*********************
+*************************************************************************
 AsturDB is a WolfgresTool to run stress test to database in PostgreSQL.
 The objetive is create a wolfgres_db (or your like name it) 
 to size like you want, this project run many users simuntanius 

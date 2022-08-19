@@ -9,8 +9,8 @@ config_files:
 database:
   host: 192.168.1.100
   port: 5432
-  admin_user: postgres
-  admin_pass: postgres
+  admin_user: admin
+  admin_pass: admin
   test_user: wolfgres_user
   test_pass: wolfgres_pass
   database: postgres
