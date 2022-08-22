@@ -276,8 +276,9 @@ func createDBUser() (bool, error) {
 	conn, ctx := wolfgres.PgxConn()
 	defer conn.Close(ctx)
 	test_user := viper.GetString("database.test_user")
+	test_pass := viper.GetString("database.test_pass")
 	log.Info("Create User:: ", test_user)
-	sql := fmt.Sprintf("CREATE USER %s WITH PASSWORD '%s';\n", test_user, test_user)
+	sql := fmt.Sprintf("CREATE USER %s WITH PASSWORD '%s';\n", test_user, test_pass)
 	log.Debug(sql)
 
 	_, err := conn.Exec(ctx, sql)
