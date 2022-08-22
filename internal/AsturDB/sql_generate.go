@@ -67,6 +67,7 @@ func GenerateUpdateOrder(x int, datname string) string {
 	}
 
 	conn, ctx := wolfgres.PgxConnDB(datname)
+	defer conn.Close(ctx)
 	sqlQuery := fmt.Sprintf("%s LIMIT %s", query.Query, strconv.Itoa(x))
 	rows, err := conn.Query(ctx, sqlQuery)
 
@@ -105,6 +106,8 @@ func GenerateDeleteOrder(x int, datname string) string {
 	}
 
 	conn, ctx := wolfgres.PgxConnDB(datname)
+	defer conn.Close(ctx)
+
 	sqlQuery := fmt.Sprintf("%s LIMIT %s", query.Query, strconv.Itoa(x))
 	rows, err := conn.Query(ctx, sqlQuery)
 

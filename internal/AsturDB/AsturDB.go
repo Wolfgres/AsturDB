@@ -22,7 +22,6 @@ var datname string
 // NameStressTest
 func RunStressTest(dbTest string) {
 	datname = dbTest
-	//test_user = viper.GetString("database.test_user")
 
 	randomData := RandmonData{
 		customers:            viper.GetInt("random_data.customers"),
@@ -34,14 +33,18 @@ func RunStressTest(dbTest string) {
 		regions:              viper.GetInt("random_data.regions"),
 	}
 
-	createDBUser()
-	loadCatalogs(randomData)
+	if validateTestSchema() {
+		log.Info("The user exist's, Do you want resumen the Test?")
+	} else {
+		createDBUser()
+		loadCatalogs(randomData)
+	}
 
 	log.Info("Init Orders")
 	orders := viper.GetInt("test.orders_by_test")
 	var order4Cycles, updates4Clycles, deletes4Clycles int
 
-	// Ay que verificar como hacer esta validacion
+	// TODO: Ay que verificar como hacer esta validacion
 
 	if viper.GetInt("test.orders_by_loop") > 50 {
 		order4Cycles = 50
@@ -139,6 +142,8 @@ func insertOrder(orders4Cycle int, randmonData RandmonData) {
 	var sql string
 	sql = GenerateOrders(orders4Cycle, randmonData.customers, randmonData.employees, randmonData.products, randmonData.districts_warehouses)
 	conn, ctx := wolfgres.PgxConnDB(datname)
+	defer conn.Close(ctx)
+
 	tx, err := conn.Begin(ctx)
 	_, err = tx.Exec(ctx, sql)
 	if err != nil {
@@ -146,7 +151,6 @@ func insertOrder(orders4Cycle int, randmonData RandmonData) {
 		tx.Rollback(ctx)
 	}
 	tx.Commit(ctx)
-	conn.Close(ctx)
 }
 
 func updateQuery(n int) {
@@ -154,6 +158,7 @@ func updateQuery(n int) {
 	var sql string
 	sql = GenerateUpdateOrder(n, datname)
 	conn, ctx := wolfgres.PgxConnDB(datname)
+	conn.Close(ctx)
 	tx, err := conn.Begin(ctx)
 	_, err = tx.Exec(ctx, sql)
 	if err != nil {
@@ -161,7 +166,6 @@ func updateQuery(n int) {
 		tx.Rollback(ctx)
 	}
 	tx.Commit(ctx)
-	conn.Close(ctx)
 }
 
 func deleteQuery(n int) {
@@ -170,6 +174,7 @@ func deleteQuery(n int) {
 	var sql string
 	sql = GenerateDeleteOrder(n, datname)
 	conn, ctx := wolfgres.PgxConnDB(datname)
+	defer conn.Close(ctx)
 	tx, err := conn.Begin(ctx)
 	_, err = tx.Exec(ctx, sql)
 	if err != nil {
@@ -177,7 +182,7 @@ func deleteQuery(n int) {
 		tx.Rollback(ctx)
 	}
 	tx.Commit(ctx)
-	conn.Close(ctx)
+
 }
 
 func query(n int) {
@@ -186,21 +191,21 @@ func query(n int) {
 	var sql string
 	sql = GenerateSelectsQueries(n, datname)
 	conn, ctx := wolfgres.PgxConnDB(datname)
+	defer conn.Close(ctx)
 	tx, err := conn.Begin(ctx)
 	_, err = tx.Exec(ctx, sql)
 	if err != nil {
 		log.Error(err)
 	}
-	conn.Close(ctx)
 }
 
 // This function check if the target size reached
 func targetSizeReached() bool {
-	datname := "wolfgres_db" //tem
 	target_size := viper.GetInt("test.target_size")
 	log.Debug("Check Database Size :: ", datname)
 	var size int
 	conn, ctx := wolfgres.PgxConn()
+	defer conn.Close(ctx)
 	sql := fmt.Sprintf("SELECT pg_database_size('%s') / 1024 / 1024;", datname)
 	log.Debug(sql)
 	row := conn.QueryRow(ctx, sql)
@@ -209,8 +214,6 @@ func targetSizeReached() bool {
 	if err != nil {
 		log.Error(err)
 	}
-
-	conn.Close(ctx)
 
 	log.Debug("Size DB Test :: ", size)
 	log.Debug("Target Size :: ", target_size)
@@ -226,6 +229,7 @@ func targetOrdersReached() bool {
 	targetOrders := viper.GetInt("test.target_orders")
 	var noOrders int
 	conn, ctx := wolfgres.PgxConn()
+	defer conn.Close(ctx)
 	sql := "SELECT count(order_id) FROM wfg.orders;"
 	log.Debug(sql)
 	row := conn.QueryRow(ctx, sql)
@@ -234,8 +238,6 @@ func targetOrdersReached() bool {
 	if err != nil {
 		log.Error(err)
 	}
-
-	conn.Close(ctx)
 
 	log.Debug("Orders Test :: ", noOrders)
 	log.Debug("Target Orders :: ", targetOrders)
@@ -252,6 +254,7 @@ func maxConnectionsReached() bool {
 	max_conn_percent := viper.GetInt("test.max_conn_percent")
 	var availableConnPercent int
 	conn, ctx := wolfgres.PgxConn()
+	defer conn.Close(ctx)
 	sql := "SELECT  100 - ((t.conn_active * 100)::integer/m.max_connection::integer)  FROM (SELECT 1 AS id, setting AS max_connection FROM pg_settings WHERE name = 'max_connections') m JOIN (SELECT 1 AS id, COALESCE(COUNT(pid),0) AS conn_active FROM pg_stat_activity WHERE state = 'active' AND pid <> pg_backend_pid()) t ON t.id = m.id"
 	row := conn.QueryRow(ctx, sql)
 	err := row.Scan(&availableConnPercent)
@@ -260,7 +263,6 @@ func maxConnectionsReached() bool {
 		log.Error(err)
 	}
 
-	conn.Close(ctx)
 	log.Debug(" max_conn_percent:: ", max_conn_percent, " > availableConnPercent:: ", availableConnPercent)
 	log.Debug("result:: ", max_conn_percent > availableConnPercent)
 
@@ -272,6 +274,7 @@ func maxConnectionsReached() bool {
 */
 func createDBUser() (bool, error) {
 	conn, ctx := wolfgres.PgxConn()
+	defer conn.Close(ctx)
 	test_user := viper.GetString("database.test_user")
 	log.Info("Create User:: ", test_user)
 	sql := fmt.Sprintf("CREATE USER %s WITH PASSWORD '%s';\n", test_user, test_user)
@@ -296,12 +299,12 @@ func createDBUser() (bool, error) {
 		log.Info("Database %s Created ", datname)
 	}
 
-	conn.Close(ctx)
 	return true, err
 }
 
 func loadCatalogs(randmonData RandmonData) (bool, error) {
 	conn, ctx := wolfgres.PgxConnDB(datname)
+	defer conn.Close(ctx)
 	if loadScript(conn, ctx, "schema") {
 		log.Info("Database Schema Created")
 	}
@@ -385,9 +388,54 @@ func loadCatalogs(randmonData RandmonData) (bool, error) {
 		log.Error(err)
 		return false, err
 	}
-	conn.Close(ctx)
 
 	return true, err
+}
+
+// Validate database user, database and all tables in the schema before start test
+func validateTestSchema() bool {
+	var r bool
+	conn, ctx := wolfgres.PgxConn()
+
+	v := viper.GetString("database.test_user")
+	s := "SELECT CASE WHEN EXISTS (SELECT usename FROM pg_user WHERE usename = '%s') THEN CAST(True AS BOOL) ELSE CAST(False AS BOOL) END;"
+	sql := fmt.Sprintf(s, v)
+	row, err := conn.Query(ctx, sql)
+	if err != nil {
+		log.Error(err)
+	}
+	for row.Next() {
+		err = row.Scan(&r)
+		log.Debug("The user exists -> ", r)
+	}
+
+	s = "SELECT CASE WHEN EXISTS (SELECT usename FROM pg_user WHERE usename = '%s') THEN CAST(True AS BOOL) ELSE CAST(False AS BOOL) END;"
+	sql = fmt.Sprintf(s, datname)
+	row, err = conn.Query(ctx, sql)
+	if err != nil {
+		log.Error(err)
+	}
+	for row.Next() {
+		err = row.Scan(&r)
+		log.Debug("The database exists -> ", r)
+	}
+
+	conn.Close(ctx)
+	conn, ctx = wolfgres.PgxConnDB(datname)
+	defer conn.Close(ctx)
+
+	s = "SELECT CASE WHEN EXISTS ( SELECT datname FROM pg_database WHERE datname = '%s') THEN CAST(True AS BOOL) ELSE CAST(False AS BOOL) END;"
+	sql = fmt.Sprintf(s, datname)
+	row, err = conn.Query(ctx, sql)
+	if err != nil {
+		log.Error(err)
+	}
+	for row.Next() {
+		err = row.Scan(&r)
+		log.Debug("The database exists -> ", r)
+	}
+
+	return r
 }
 
 func loadScript(conn *pgx.Conn, ctx context.Context, scriptName string) bool {
