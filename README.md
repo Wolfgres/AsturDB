@@ -1,50 +1,50 @@
 # AsturDB
 ## The stress tool to PostgreSQL
 <!--AsturDB by Wolfgres Postgres Enterprise  is a benchmark tool to stress databases in PostgreSQL to test-->
-__AsturDB by Wolfgres Postgres Enterprise__ es la herramienta para el análisis, medicion de rendimiento y pruebas de estrés sobre bases de datos PostgreSQL.
+__AsturDB by Wolfgres Postgres Enterprise__ is the tool for analysis, performance measurement and stress testing of PostgreSQL databases.
 
-## Contenido
+## Contents
 
-* [Información General](#información-general)
-* [Caractirísticas Principales](#características-principales)
-* [Obtener AsturDB](#obtener-asturdb)
-* [Prerrequisitos](#prerrequisitos)
+* [General information](#general-information)
+* [Main Features](#main-features)
+* [Get AsturDB](#get-asturdb)
+* [Prerequisites](#prerequisites)
 * [Instalación y Configuración](#instalación-y-configuración)
-* [Ejecución](#ejecución)
-* [Menú de Ayuda](#menú-de-ayuda)
-* [Contacto](#contacto)
+* [Execution](#execution)
+* [Help Menu](#help-menu)
+* [Contact](#contact)
 
-## Información General
-AsturDB esta diseñada con el objetivo de brindar una herramienta que permita simular diversos escenarios que influyen en el rendimiento de una base de datos PostgreSQL así como obtener metricas realcionadas con la ejecución y procesamiento masivo de diversas sentencias SQL (SELECT, INSERT, UPDATE, DELETE).   
+## General information
+AsturDB is designed with the aim of providing a tool that allows simulating various scenarios that influence the performance of a PostgreSQL database as well as obtaining metrics related to the execution and massive processing of various SQL statements (SELECT, INSERT, UPDATE, DELETE).
 
-## Características Principales
+## Main Features
 
-- Permite crear una base de datos de un tamaño seleccionado.
-- Permite seleccionar el tipo, cantidad y frecuencia de sentencias SQL para la creacion de la BD.
-- Permite seleccionar el numero de registros a ser insertados en una tabla.
+- Allows you to create a database of a selected size.
+- Allows you to select the type, quantity and frequency of SQL sentences for the creation of the DB.
+- Allows you to select the number of records to be inserted in a table.
 
-## Obtener AsturDB
+## Get AsturDB
 
-AsturDB es de código libre, las actualizaciones más recientes se pueden obtener de manera sencilla para su uso mediante el siguiente repositorio:
+AsturDB is open source, the most recent updates can be easily obtained for use through the following repository:
 
 ````bash
     git clone https://github.com/Wolfgres/AsturDB.git
 ````
 
-## Prerrequisitos
+## Prerequisites
 
-Antes de poder ejecutar AsturDB se debe de contar con las siguientes dependencias: 
+Before being able to run AsturDB, you must have the following dependencies:
 
-|Dependencia         |Nombre      |Descripción |Versión     |
+|Dependence         |Name      |Description |Version     |
 |:---             |:----:      |:----:      |---: |
-|Sistema Operativo|Ubuntu, Rocky Linux, RedHat, etc.       |Compatible con sistemas basados en Unix       | 20.04 o superior   |
-|Lenguaje         |Go          |Permite la ejecución de aplicaciones desarrolladas en dicho lenguaje        | 1.16 o superior      |
-|Base de Datos    |PostgreSQL  |Instancia local o remota para análisis de rendimiento         | 11 o superior      |
+|Operating system|Ubuntu, Rocky Linux, RedHat, etc.       |Compatible with Unix-based systems       | 20.04 or higher   |
+|Language         |Go          |Allows the execution of applications developed in said language        | 1.16 or higher      |
+|Database    |PostgreSQL  |Local or remote instance for performance analysis         | 11 or higher      |
 
-## Instalación y Configuraión
+## Installation and configuration
 
 
-AsturDB emplea un usuario de base de datos con privilegios de administrador en caso de no existir alguno disponible se debera de ser crear.
+AsturDB uses a database user with administrator privileges, if there is none available, it should be created.
 
 ````bash
     postgres=# CREATE USER admin PASSWORD 'admin' SUPERUSER;
@@ -52,7 +52,7 @@ AsturDB emplea un usuario de base de datos con privilegios de administrador en c
 
 
 ## pg_hba.conf
-AsturDB requiere establcer una conexión con la base de datos PostgreSQL por lo cual se debe de agregar la siguiente regla de acceso dentro del archivo __pg_hba.conf__
+Astur DB requires establishing a connection with the PostgreSQL database, so the following access rule must be added to the __pg_hba.conf__ file.
 
 ````bash
     # TYPE  DATABASE       USER            ADDRESS                 METHOD
@@ -63,25 +63,26 @@ AsturDB requiere establcer una conexión con la base de datos PostgreSQL por lo 
 
 ````
 
-Despues de modificar el archivo se requiere recargar la configuracion mediante
+After modifying the file it is required to reload the configuration by means of
+
 ````bash
     systemctl reload postgresql@14-main.service
 ````
 
 ## .AsturDB.yaml
 
-El principal archivo de configuración de AsturDB es __.AsturDB.yaml__ antes de posder utilizar la herramienta se deberan establecer los siguientes parametros.
+The main configuration file of AsturDB is __.AsturDB.yaml__ Before using the tool, the following parameters must be established.
 
-__database:__ En este bloque de configuración se configuran los accesos a la base de datos.
-* `host:` Establece la direccion ip del servidor PostrgeSQL local o remoto.
-* `port:` Establece el puerto sobre el cual se ejecuta PostgreSQL.
-* `admin_user:` Establece el usuario con priviligios de superusuario para la creacion de la base de datos.
-* `admin_pass:` Establece la clave del super usuario.
-* `test_user:` Establece el usuario que empleara AsturDB para la ejecucio de sentencias SQL.
-* `test_pass:` Establece la clave del usuario test.
-* `database:` Establece el la base de datos empleada inicialmente para establecer la conexion entre AsturDB y PostgreSQL.
+__database:__ Access to the database is configured in this configuration block.
+* `host:` Sets the ip address of the local or remote PostgreSQL server.
+* `port:` Sets the port on which PostgreSQL runs.
+* `admin_user:` Sets the user with superuser privileges for database creation.
+* `admin_pass:` Sets the password of the super user.
+* `test_user:` Sets the user that AsturDB uses to execute SQL sentences.
+* `test_pass:` Sets the test user's password.
+* `database:` Sets the database used initially to establish the connection between AsturDB and PostgreSQL.
 
-__Ejemplo:__
+__Example:__
 ````bash
     database:
       host: 192.168.1.100
@@ -93,27 +94,27 @@ __Ejemplo:__
       database: postgres
 ````
 
-## Ejecución
-Una vez completada la configuración se puede iniciar la ejecución de la herramienta mediante el siguiente comando:  
+## Execution:
+Once the configuration is complete, the execution of the tool can be started using the following command:
 
-__Sintaxis:__
+__Sintax:__
 ````bash
     go run main.go --config /ruta_a_configs/.AsturDB.yaml start
 ````
-__Ejemplo:__
+__Example:__
 ````bash
     go run main.go --config /opt/AsturDB/configs/.AsturDB.yaml start
 ````
 
-## Menú de Ayuda
+## Help Menu
 
-AsturDB cuenta con una lista de comandos a los cuales se puede acceder mediante el siguiente comando:
+AsturDB has a list of commands that can be accessed using the following command:
 ````bash
     go run main.go --help
 ````
 ![Example screenshot](./img/asturdb.png)
 
-## Contacto
-Creado por [Wolfgres](https://www.wolfgres.com/) - Para cualquier pregunta o sugerencia puedes comunicarte con nosotros en soporte@wolfgres.com.mx 
+## Contact
+Created by [Wolfgres](https://www.wolfgres.com/) - For any question or suggestion you can contact us at support@wolfgres.com.mx
 
 
