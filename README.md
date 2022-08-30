@@ -115,6 +115,6 @@ AsturDB has a list of commands that can be accessed using the following command:
 ![Example screenshot](./img/asturdb.png)
 
 ## Contact
-Created by [Wolfgres](https://www.wolfgres.com/) - For any question or suggestion you can contact us at support@wolfgres.com.mx
+Created by [Wolfgres](https://www.wolfgres.com/) - For any question or suggestion you can contact us at soporte@wolfgres.com.mx
 
 
