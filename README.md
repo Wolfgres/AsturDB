@@ -1,4 +1,4 @@
-# AsturDB
+![AsturDB](./img/asturdb_logo.png)
 ## The stress tool to PostgreSQL
 <!--AsturDB by Wolfgres Postgres Enterprise  is a benchmark tool to stress databases in PostgreSQL to test-->
 __AsturDB by Wolfgres Postgres Enterprise__ is the tool for analysis, performance measurement and stress testing of PostgreSQL databases.
